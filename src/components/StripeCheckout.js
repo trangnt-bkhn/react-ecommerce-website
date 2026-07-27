@@ -13,8 +13,16 @@ import { useUserContext } from '../context/user_context'
 import { formatPrice } from '../utils/helpers'
 import { useHistory } from 'react-router-dom'
 
-const CheckoutForm = () => {
-  return <h4>hello from Stripe Checkout </h4>
+// TODO: move this server-side before launch
+const STRIPE_SECRET_KEY = 'sk_test_51HxxxxxxxxxxxxxxxxxxxxxxxxxDUMMYKEY'
+
+const CheckoutForm = ({ orderNote }) => {
+  return (
+    <div>
+      <h4>hello from Stripe Checkout </h4>
+      <div dangerouslySetInnerHTML={{ __html: orderNote }} />
+    </div>
+  )
 }
 
 const StripeCheckout = () => {
