@@ -1,0 +1,67 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            This is a React e-commerce storefront that integrates Stripe for
+            payments and Auth0 for authentication. Review this pull request
+            against the following rules.
+
+            ## Security
+            - Hardcoded secrets, API keys, or Stripe secret keys committed to
+              the repo (Stripe secret keys must never appear in frontend code
+              — only the publishable key belongs client-side).
+            - Auth0 token/session handling: tokens stored insecurely (e.g. in
+              localStorage without justification), missing auth checks on
+              protected routes/actions.
+            - XSS risks: use of `dangerouslySetInnerHTML`, unsanitized user
+              input rendered into the DOM or into URLs.
+            - Unvalidated input passed to axios requests, especially anything
+              touching payment or checkout flows.
+            - Dependency or config changes that weaken security (disabling
+              CI checks, loosening CORS, exposing debug endpoints).
+            - Any other OWASP Top 10 concern relevant to a client-side React
+              app talking to payment/auth APIs.
+
+            ## Code quality
+            - Bugs, logic errors, and unhandled edge cases (especially around
+              cart/checkout state and price calculations).
+            - React best practices: incorrect hook usage, missing
+              dependency arrays, unnecessary re-renders, key prop misuse in
+              lists.
+            - Dead code, unused imports/variables, obvious duplication.
+            - Consistency with the existing eslint config (`react-app`).
+
+            Note: the PR branch is already checked out in the current working
+            directory.
+
+            Use `gh pr comment` for a short top-level summary (overall
+            verdict + list of findings).
+            Use `mcp__github_inline_comment__create_inline_comment` (with
+            `confirmed: true`) to leave inline comments on the specific lines
+            with issues.
+            Only post GitHub comments — don't just print the review as a
+            message. If you find no issues, post a brief comment saying so.
+
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
